@@ -1,11 +1,14 @@
 import { PipelineComponent } from "../core/pipeline";
 import { IntentResult } from "../types";
 
-export const segment: PipelineComponent = (input: IntentResult): IntentResult => {
+export const segment: PipelineComponent = (
+  input: IntentResult,
+): IntentResult => {
   // Segment text into sentences
-  const sentences = input.text.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 0);
-  
-  // Add sentence entities to the result
+  const sentences = input.text
+    .split(/(?<=[.?!])\s+/)
+    .filter((s) => s.trim().length > 0);
+
   let position = 0;
   for (const sentence of sentences) {
     const start = input.text.indexOf(sentence, position);

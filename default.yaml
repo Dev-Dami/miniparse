@@ -1,0 +1,20 @@
+pipeline:
+  enableNormalization: true
+  enableCleaning: true
+  enableExtraction: true
+  enableSegmentation: true
+
+tokenizer:
+  lowercase: true
+  mergeSymbols: false
+
+speech:
+  removeFillerWords: true
+  detectRepetitions: false
+  findStutters: false
+
+extraction:
+  extractEmails: true
+  extractPhones: true
+  extractUrls: true
+  extractNumbers: true

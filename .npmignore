@@ -10,6 +10,7 @@ example.ts
 examples/
 
 # Development files
+src/
 *.md
 !README.MD
 !API.md

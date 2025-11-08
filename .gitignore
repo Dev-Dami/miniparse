@@ -137,3 +137,8 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+example.ts
+examples/example.js.map
+examples/example.js
+examples/example.d.ts.map
+examples/example.d.ts

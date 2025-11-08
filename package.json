@@ -1,27 +1,47 @@
 {
   "name": "miniparse",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0-beta",
+  "description": "A fast, lightweight, and configurable NLP library for text processing, tokenization, and analysis",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Dev-Dami/light-js-nlp.git"
+    "url": "git+https://github.com/opensource/miniparse.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "nlp",
+    "text-processing",
+    "tokenizer",
+    "parsing",
+    "natural-language-processing",
+    "text-analysis",
+    "typescript"
+  ],
+  "author": "Miniparse Contributors",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/Dev-Dami/light-js-nlp/issues"
+    "url": "https://github.com/opensource/miniparse/issues"
   },
-  "homepage": "https://github.com/Dev-Dami/light-js-nlp#readme",
+  "homepage": "https://github.com/opensource/miniparse#readme",
   "dependencies": {
     "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/node": "^24.10.0"
-  }
+  },
+  "files": [
+    "dist/**/*",
+    "README.MD",
+    "API.md",
+    "examples.md",
+    "default.yaml",
+    "LICENSE"
+  ]
 }

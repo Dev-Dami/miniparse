@@ -52,10 +52,21 @@ function extractPhones(input: IntentResult): void {
   const tokens = text.split(/[\s\n\r\t,;()<>[\]{}]+/);
   
   for (const token of tokens) {
+    if (!token) continue;
+    
     // A phone number typically has 10-15 digits with possible separators
     if (token.length >= 10) {
-      const digitCount = (token.match(/\d/g) || []).length;
-      const separatorCount = (token.match(/[-.\s()]/g) || []).length;
+      let digitCount = 0;
+      let separatorCount = 0;
+      
+      // Count digits and valid phone number separators
+      for (const char of token) {
+        if (isDigit(char)) {
+          digitCount++;
+        } else if (['-', '.', ' ', '(', ')', '+'].includes(char)) {
+          separatorCount++;
+        }
+      }
       
       if (digitCount >= 10 && digitCount <= 15 && (digitCount + separatorCount === token.length)) {
         // This may be a phone number
@@ -79,7 +90,7 @@ function extractUrls(input: IntentResult): void {
   
   for (const protocol of protocols) {
     let searchStart = 0;
-    while (true) {
+    while (searchStart < text.length) {
       const protocolIndex = text.indexOf(protocol, searchStart);
       if (protocolIndex === -1) break;
       
@@ -103,7 +114,8 @@ function extractUrls(input: IntentResult): void {
         });
       }
       
-      searchStart = urlEnd;
+      // Advance search position to avoid infinite loops
+      searchStart = urlEnd > searchStart ? urlEnd : searchStart + 1;
     }
   }
 }

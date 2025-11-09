@@ -1,2 +1,1 @@
-<!-- Logo would go here if available -->
-<span class="font-bold text-lg">Miniparse Documentation</span>
+<img src="./assets/logo.png" alt="Miniparse Logo" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> <span class="font-bold text-lg">Miniparse Documentation</span>

@@ -1,6 +1,6 @@
 {
   "name": "devdami-miniparse",
-  "version": "0.1.0-beta",
+  "version": "0.1.1-beta",
   "description": "A fast, lightweight, and configurable NLP library for text processing, tokenization, and analysis",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,5 +42,8 @@
     "examples.md",
     "default.yaml",
     "LICENSE"
-  ]
+  ],
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
 }

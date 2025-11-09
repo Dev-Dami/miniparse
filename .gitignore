@@ -157,3 +157,5 @@ final_test.js
 direct_config_test.js
 tests/custom_config_test.js
 tests/config_test.js
+tests/yaml_test.js
+tests/yaml_complex_test.js

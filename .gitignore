@@ -159,3 +159,5 @@ tests/custom_config_test.js
 tests/config_test.js
 tests/yaml_test.js
 tests/yaml_complex_test.js
+examples/express-integration.js
+examples/express-integration.ts

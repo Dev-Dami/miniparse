@@ -35,13 +35,8 @@ const speechText = "Um, well, I think that, uh, like, you know, the project is g
 const analysis = analyzeSpeechPatterns(speechText);
 
 console.log('Filler words found:', analysis.fillerWords);
-// Output: ['Um,', 'well,', 'uh,', 'like,', 'you', 'know,']
-
 console.log('Repetitions found:', analysis.repetitions);
-// Output: [] (no repetitions in this example)
-
 console.log('Stutters found:', analysis.stutters);
-// Output: [] (no stutters in this example)
 ```
 
 ### Preprocessing Speech
@@ -74,67 +69,56 @@ console.log(cleanText2);
 ```typescript
 import { Pipeline, type PipelineComponent, IntentResult } from 'miniparse';
 
-// Create a custom processor to find hashtags
-const hashtagProcessor: PipelineComponent = (input: IntentResult) => {
-  const hashtagRegex = /#[a-zA-Z0-9_]+/g;
-  let match;
-
-  // Note: In real implementation, you'd avoid regex and use string parsing
-  const text = input.text;
-  let searchIndex = 0;
-
-  while (searchIndex < text.length) {
-    const hashtagStart = text.indexOf('#', searchIndex);
-    if (hashtagStart === -1) break;
-
-    let hashtagEnd = hashtagStart + 1;
-    while (hashtagEnd < text.length &&
-           /[a-zA-Z0-9_]/.test(text[hashtagEnd])) {
-      hashtagEnd++;
-    }
-
-    if (hashtagEnd > hashtagStart + 1) { // Valid hashtag found
-      input.entities.push({
-        type: 'hashtag',
-        value: text.substring(hashtagStart, hashtagEnd),
-        start: hashtagStart,
-        end: hashtagEnd
-      });
-    }
-
-    searchIndex = hashtagEnd;
-  }
-
+// Create a custom processor that adds a custom entity
+const customProcessor: PipelineComponent = (input: IntentResult) => {
+  input.entities.push({
+    type: 'custom',
+    value: 'custom entity',
+    start: 0,
+    end: 13
+  });
   return input;
 };
 
 const pipeline = new Pipeline();
-pipeline.addCustomProcessor(hashtagProcessor);
+pipeline.addCustomProcessor(customProcessor);
 
-const result = await pipeline.process('Check out #typescript and #miniparse!');
+const result = await pipeline.process('Sample text...');
 console.log(result.entities);
-// Output: entities array including hashtags
 ```
 
-### Processing Text with Different Configurations
+## LLM Integration Examples
+
+### Using LLM for Sentiment Analysis
 ```typescript
-import { Pipeline } from 'miniparse';
+import { Pipeline, GeminiLLMAdapter, createLLMSentimentAnalyzer } from 'miniparse';
 
-// Create a pipeline that only does tokenization and normalization
-const minimalPipeline = new Pipeline();
-// Disable all processors except normalization
-minimalPipeline.use((input) => input); // This is a no-op, just to demonstrate
+const geminiAdapter = new GeminiLLMAdapter({
+  apiKey: process.env.GEMINI_API_KEY!,
+  model: 'gemini-2.5-flash',
+});
 
-// Process with full pipeline
-const fullPipeline = new Pipeline();
+const pipeline = new Pipeline();
+pipeline.addLLMProcessor(createLLMSentimentAnalyzer(geminiAdapter));
 
-const text = 'Contact us at support@example.com or call (555) 123-4567';
+const result = await pipeline.process('I love this product! It works perfectly.');
+console.log(result.entities); // Contains sentiment entity
+```
 
-const minimalResult = await minimalPipeline.process(text);
-const fullResult = await fullPipeline.process(text);
+### Using LLM for Summarization
+```typescript
+import { Pipeline, GeminiLLMAdapter, createLLMSummarizer } from 'miniparse';
 
-console.log('Minimal processing result:', minimalResult);
-console.log('Full processing result:', fullResult);
+const geminiAdapter = new GeminiLLMAdapter({
+  apiKey: process.env.GEMINI_API_KEY!,
+  model: 'gemini-2.5-flash',
+});
+
+const pipeline = new Pipeline();
+pipeline.addLLMProcessor(createLLMSummarizer(geminiAdapter, undefined, 50));
+
+const result = await pipeline.process('Your long text here...');
+console.log(result.entities); // Contains summary entity
 ```
 
 ## Extraction Examples
@@ -167,17 +151,14 @@ async function extractSpecificInfo() {
 ```
 
 ### Using Individual Extraction Functions
-You can also use individual extraction functions when you need fine-grained control over which entities are extracted:
-
 ```typescript
-import { Pipeline, extractEmailsOnly, extractPhonesOnly, extractUrlsOnly, extractNumbersOnly } from 'miniparse';
+import { Pipeline, extractEmailsOnly } from 'miniparse';
 
 async function customExtraction() {
   const pipeline = new Pipeline();
 
   // Add only specific extraction processors to the pipeline
-  pipeline.addCustomProcessor(extractEmailsOnly);  // Only email extraction
-  // pipeline.addCustomProcessor(extractPhonesOnly);  // Uncomment to add phone extraction too
+  pipeline.addCustomProcessor(extractEmailsOnly);
 
   const result = await pipeline.process('Email: test@example.com and Phone: (555) 123-4567');
   // Only emails will be extracted based on the processors added
@@ -196,6 +177,7 @@ pipeline:
   enableCleaning: true
   enableExtraction: true
   enableSegmentation: true
+  enableAdvCleaning: false
 
 tokenizer:
   lowercase: true
@@ -211,87 +193,52 @@ extraction:
   extractPhones: true
   extractUrls: true
   extractNumbers: true
+
+llm:
+  enabled: false
+  provider: gemini
 ```
 
-### Using Different Configurations
-```typescript
-import { ConfigLoader } from 'miniparse';
+## API Integration Examples
 
-// Load configuration programmatically
-const config = ConfigLoader.loadConfig('./path/to/config.yaml');
+### Express.js API for Text Processing
 
-// Create pipeline with specific config
-const pipeline = new Pipeline('./path/to/config.yaml');
-```
-
-## Performance Considerations
-
-### Processing Large Texts
-```typescript
-import { Pipeline } from 'miniparse';
-
-async function processLargeText() {
-  const pipeline = new Pipeline();
-
-  // For very large texts, consider breaking them into smaller chunks
-  const largeText = '...'; // Very large string
-
-  // Split into sentences or paragraphs for processing
-  const chunks = largeText.split(/[\r\n]+/).filter(chunk => chunk.trim().length > 0);
-
-  const results = [];
-  for (const chunk of chunks) {
-    const result = await pipeline.process(chunk);
-    results.push(result);
-  }
-
-  return results;
-}
-```
-
-## Real-World Example: Processing User Input
-
-Here's a practical example of using Miniparse to process user input in a chatbot application:
+This example demonstrates how to create a simple Express.js API endpoint that uses the `processText` function from Miniparse to process incoming text requests.
 
 ```typescript
-import { Pipeline } from 'miniparse';
+import express from "express";
+import { processText } from "dd-miniparse";
 
-class ChatbotProcessor {
-  private pipeline: Pipeline;
-  
-  constructor() {
-    // Initialize with custom configuration for chat processing
-    this.pipeline = new Pipeline('./chatbot-config.yaml');
-  }
-  
-  async processUserInput(input: string) {
-    // Clean speech patterns from user input
-    const cleanedInput = preprocessSpeechInput(input, {
-      removeFillerWords: true,
-      detectRepetitions: true
-    });
-    
-    // Process the cleaned text through our pipeline
-    const result = await this.pipeline.process(cleanedInput);
-    
-    // Extract relevant information
-    const emails = result.entities.filter(e => e.type === 'email');
-    const phones = result.entities.filter(e => e.type === 'phone');
-    const urls = result.entities.filter(e => e.type === 'url');
-    
-    return {
-      original: input,
-      cleaned: cleanedInput,
-      tokens: result.tokens,
-      entities: result.entities,
-      contactInfo: { emails, phones, urls },
-      wordCount: result.tokens.filter(t => t.type === 'word').length
-    };
-  }
+const app = express();
+const port = 3000;
+
+app.use(express.json());
+
+app.get("/process", async (req, res) => {
+const { text, configPath } = req.query;
+
+if (!text || typeof text !== "string") {
+  return res
+    .status(400)
+    .json({ error: "Missing or invalid 'text' query parameter." });
 }
 
-// Usage
-const processor = new ChatbotProcessor();
-const response = await processor.processUserInput("Hi, my name is John. You can reach me at john@example.com or call me at 555-123-4567. Visit my website at https://example.com");
-console.log(response);
+try {
+  const result = await processText(text, configPath as string | undefined);
+  res.json(result);
+} catch (error: any) {
+  console.error("Error processing text:", error);
+  res
+    .status(500)
+    .json({ error: "Failed to process text.", details: error.message });
+}
+});
+
+app.listen(port, () => {
+console.log(`Express example app listening at http://localhost:${port}`);
+console.log(`Try: http://localhost:${port}/process?text=Hello%20world%20`);
+console.log(
+  `Or with advanced cleaning enabled (if configured): http://localhost:${port}/process?text=Hello%20world%20&configPath=./default.yaml`,
+);
+});
 ```

@@ -21,6 +21,7 @@ pipeline:
   enableCleaning: true
   enableExtraction: true
   enableSegmentation: true
+  enableAdvCleaning: false
 
 tokenizer:
   lowercase: true
@@ -36,6 +37,10 @@ extraction:
   extractPhones: true
   extractUrls: true
   extractNumbers: true
+
+llm:
+  enabled: false
+  provider: gemini
 ```
 
 ## Configuration Sections
@@ -50,6 +55,7 @@ The `pipeline` section controls which processing components are enabled:
 | enableCleaning | boolean | true | Enables cleaning of punctuation and whitespace tokens |
 | enableExtraction | boolean | true | Enables entity extraction (emails, phones, urls, numbers) |
 | enableSegmentation | boolean | true | Enables text segmentation into sentences |
+| enableAdvCleaning | boolean | false | Enables advanced cleaning with more sophisticated rules |
 
 ### Tokenizer Configuration
 
@@ -80,6 +86,20 @@ The `extraction` section controls which entity types are extracted:
 | extractPhones | boolean | true | Extract phone numbers from text |
 | extractUrls | boolean | true | Extract URLs from text |
 | extractNumbers | boolean | true | Extract numbers from text |
+
+### LLM Configuration
+
+The `llm` section configures Large Language Model integration:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| enabled | boolean | false | Enable LLM functionality |
+| provider | string | "gemini" | LLM provider (currently supports "gemini") |
+| apiKey | string | - | Your LLM API key |
+| model | string | "gemini-2.5-flash" | LLM model to use |
+| temperature | number | - | Temperature setting for LLM generation |
+| maxTokens | number | - | Maximum tokens for LLM responses |
+| timeout | number | - | Request timeout in milliseconds |
 
 ## Programmatic Configuration
 
@@ -113,6 +133,7 @@ pipeline:
   enableCleaning: false
   enableExtraction: false
   enableSegmentation: false
+  enableAdvCleaning: false
 
 tokenizer:
   lowercase: true
@@ -128,6 +149,10 @@ extraction:
   extractPhones: false
   extractUrls: false
   extractNumbers: false
+
+llm:
+  enabled: false
+  provider: gemini
 ```
 
 ### Speech Processing Configuration
@@ -138,6 +163,7 @@ pipeline:
   enableCleaning: true
   enableExtraction: false
   enableSegmentation: true
+  enableAdvCleaning: true
 
 tokenizer:
   lowercase: true
@@ -153,6 +179,10 @@ extraction:
   extractPhones: false
   extractUrls: false
   extractNumbers: false
+
+llm:
+  enabled: false
+  provider: gemini
 ```
 
 ### Entity Extraction Configuration
@@ -163,6 +193,7 @@ pipeline:
   enableCleaning: true
   enableExtraction: true
   enableSegmentation: false
+  enableAdvCleaning: false
 
 tokenizer:
   lowercase: true
@@ -178,4 +209,8 @@ extraction:
   extractPhones: true
   extractUrls: true
   extractNumbers: true
+
+llm:
+  enabled: false
+  provider: gemini
 ```

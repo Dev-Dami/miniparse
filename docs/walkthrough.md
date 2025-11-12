@@ -2,28 +2,15 @@
 
 ## Introduction
 
-This guide provides an in-depth walkthrough of the Miniparse codebase, explaining how the different components work together to provide a fast and efficient NLP library. Understanding the architecture will help you both use Miniparse effectively and potentially contribute to the project.
-
-## Project Structure
-
-```
-src/
-├── adapters/          # High-level APIs and interfaces
-├── config/            # Configuration loading and defaults
-├── core/              # Core functionality (tokenizer, pipeline)
-├── processors/        # Processing components
-├── types/             # Type definitions
-├── index.ts           # Main export file
-```
+This guide provides an in-depth walkthrough of the miniparse codebase, explaining how the different components work together to provide a fast and efficient NLP library. Understanding the architecture will help you both use miniparse effectively and potentially contribute to the project.
 
 ## Core Components
 
 ### 1. Tokenizer (src/core/Tokenizer.ts)
 
-The tokenizer is the foundational component that breaks text into discrete tokens. Let's examine its structure:
+The tokenizer is the foundational component that breaks text into discrete tokens. It uses character-by-character parsing rather than regular expressions for optimal performance.
 
 ```typescript
-// In src/core/Tokenizer.ts
 interface Token {
   value: string;    // The actual text content
   type: TokenType;  // The type of token (word, number, etc.)
@@ -34,7 +21,7 @@ interface Token {
 type TokenType = "word" | "number" | "punct" | "symbol" | "whitespace" | "unknown";
 ```
 
-The tokenizer uses character-by-character parsing rather than regular expressions for optimal performance. It identifies tokens by checking character properties and groups them accordingly.
+The tokenizer identifies tokens by checking character properties and groups them accordingly.
 
 ### 2. Pipeline (src/core/pipeline.ts)
 
@@ -42,41 +29,44 @@ The pipeline orchestrates the entire text processing flow:
 
 ```typescript
 class Pipeline {
-  private components: PipelineComponent[] = [];
-  private tokenizer: Tokenizer;
-  private config: MiniparseConfig;
-  
+  private readonly components: PipelineComponent[] = [];
+  private readonly tokenizer: Tokenizer;
+  private readonly config: MiniparseConfig;
+  private llmAdapter?: LLMAdapter;
+
   constructor(configPath?: string) {
     // Load configuration
     this.config = ConfigLoader.loadConfig(configPath);
-    
+
     // Initialize tokenizer with config
     this.tokenizer = new Tokenizer({
       lowercase: this.config.tokenizer.lowercase,
       mergeSymbols: this.config.tokenizer.mergeSymbols,
     });
-    
+
     // Initialize components based on config
     if (this.config.pipeline.enableNormalization) this.use(normalize);
-    // ... other components
+    if (this.config.pipeline.enableCleaning) this.use(clean);
+    if (this.config.pipeline.enableAdvCleaning) this.use(advClean);
+    // ... other components based on config
   }
-  
+
   async process(text: string): Promise<IntentResult> {
     // 1. Tokenize the text
     const tokens = this.tokenizer.tokenize(text);
-    
+
     // 2. Initialize result object
     let result: IntentResult = {
       text,
       tokens,
       entities: [],
     };
-    
+
     // 3. Pass through each component in sequence
     for (const component of this.components) {
       result = await component(result);
     }
-    
+
     return result;
   }
 }
@@ -100,7 +90,8 @@ const exampleProcessor: PipelineComponent = (input: IntentResult) => {
 Current processors include:
 - `normalize.ts` - Normalizes text and entity values
 - `clean.ts` - Removes unwanted tokens (punctuation, whitespace)
-- `extract.ts` - Extracts entities like emails, phones, URLs
+- `advclean.ts` - Advanced cleaning with more sophisticated rules
+- `extract.ts` - Extracts entities like emails, phones, URLs, numbers
 - `segment.ts` - Segments text into sentences
 
 ## Configuration System
@@ -110,50 +101,25 @@ Current processors include:
 The configuration system supports multiple sources with a priority order:
 
 1. **Custom config path** - Specified when creating Pipeline
-2. **Local config file** - `miniparse.config.yaml` in working directory
+2. **Local config file** - `dd-miniparse.config.yaml` in working directory
 3. **Default config** - Built-in defaults
-
-```typescript
-class ConfigLoader {
-  static loadConfig(customConfigPath?: string): MiniparseConfig {
-    // Try custom path first
-    if (customConfigPath && fs.existsSync(customConfigPath)) {
-      return this.loadConfigFromFile(customConfigPath);
-    }
-    
-    // Try local config file
-    const localConfigPath = path.join(process.cwd(), this.CONFIG_FILE_NAME);
-    if (fs.existsSync(localConfigPath)) {
-      return this.loadConfigFromFile(localConfigPath);
-    }
-    
-    // Fallback to default
-    return JSON.parse(JSON.stringify(defaultConfig));
-  }
-}
-```
 
 ### Configuration Interface (src/config/defaults.ts)
 
-All configuration options are strongly typed using TypeScript interfaces:
+All configuration options are strongly typed using TypeScript interfaces with a comprehensive default configuration.
 
-```typescript
-interface MiniparseConfig {
-  pipeline: {
-    enableNormalization: boolean;
-    // ... other options
-  };
-  tokenizer: {
-    lowercase: boolean;
-    mergeSymbols: boolean;
-  };
-  // ... other sections
-}
-```
+## LLM Integration
+
+dd-miniparse includes powerful LLM integration with:
+
+- Support for multiple providers (currently focused on Google Gemini)
+- Caching mechanisms to reduce API costs
+- Multiple pre-built LLM-based processors
+- Error handling and fallback mechanisms
 
 ## Type System
 
-Miniparse uses a robust type system to ensure type safety and provide excellent developer experience:
+dd-miniparse uses a robust type system to ensure type safety and provide excellent developer experience:
 
 ```typescript
 // Core types (in src/types/index.ts)
@@ -177,7 +143,11 @@ type PipelineComponent = (
 
 ## Adapters (Speech Processing)
 
-The adapters layer provides high-level APIs for specific use cases. The speech processing adapter is particularly interesting:
+The adapters layer provides high-level APIs for specific use cases. The speech processing adapter offers:
+
+- Removal of filler words from transcribed speech
+- Detection and correction of repetitions
+- Identification and fixing of stuttered words
 
 ```typescript
 // src/adapters/speech.ts
@@ -185,22 +155,7 @@ export function preprocessSpeechInput(
   text: string,
   options?: SpeechPatternOptions
 ): string {
-  let result = text;
-
-  if (opts.removeFillerWords) {
-    result = removeFillerWords(result);
-  }
-  // ... other processing steps
-
-  return result.trim();
-}
-
-export function analyzeSpeechPatterns(text: string): {
-  fillerWords: string[];
-  repetitions: string[];
-  stutters: string[];
-} {
-  // Analyze the text and return patterns found
+  // Process speech text to clean up artifacts
 }
 ```
 
@@ -212,7 +167,7 @@ The Pipeline constructor builds the processing chain based on configuration:
 ```typescript
 constructor(configPath?: string) {
   // ... initialization code ...
-  
+
   if (this.config.pipeline.enableNormalization) this.use(normalize);
   if (this.config.pipeline.enableCleaning) this.use(clean);
   // ... add other components conditionally
@@ -239,7 +194,7 @@ pipeline.addCustomProcessor(myCustomProcessor);
 ## Performance Optimizations
 
 ### 1. String Parsing Instead of Regex
-Miniparse avoids regex for tokenization, using character-by-character parsing which is significantly faster.
+dd-miniparse avoids regex for tokenization, using character-by-character parsing which is significantly faster.
 
 ### 2. Conditional Component Loading
 Components are only instantiated if enabled in the configuration, reducing memory usage.
@@ -247,9 +202,9 @@ Components are only instantiated if enabled in the configuration, reducing memor
 ### 3. Minimal Object Creation
 Tokens and entities store position information rather than copying text, reducing memory overhead.
 
-## Extending Miniparse
+## Extending dd-miniparse
 
-You can extend Miniparse functionality in several ways:
+You can extend dd-miniparse functionality:
 
 ### 1. Custom Processors
 ```typescript
@@ -266,30 +221,3 @@ Add new configuration options and corresponding processors.
 
 ### 3. New Adapters
 Create new high-level APIs in the adapters directory for specific use cases.
-
-## Testing and Quality
-
-While the current codebase doesn't include automated tests, a comprehensive testing strategy would involve:
-
-1. **Unit tests** for individual components (tokenizer, processors)
-2. **Integration tests** for the pipeline flow
-3. **Performance tests** to ensure optimizations
-4. **Configuration tests** to verify different config combinations work correctly
-
-## Future Considerations
-
-The architecture allows for several potential enhancements:
-
-1. **Additional processors** for new entity types
-2. **Language support** with locale-specific tokenization
-3. **Streaming API** for processing large documents
-4. **WebAssembly version** for even better performance
-
-<div class="bg-blue-900/30 border-l-4 border-blue-500 p-4 my-4">
-  <div class="flex items-start">
-    <span class="material-icons text-blue-400 mr-2">info</span>
-    <div>
-      <p class="text-blue-200"><strong>Architecture Summary:</strong> Miniparse follows a modular, configurable design that balances performance and extensibility. The pipeline architecture allows for efficient processing while remaining flexible enough to accommodate different use cases.</p>
-    </div>
-  </div>
-</div>

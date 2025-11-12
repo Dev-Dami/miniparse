@@ -1,7 +1,7 @@
 {
-  "name": "devdami-miniparse",
-  "version": "0.1.1-beta",
-  "description": "A fast, lightweight, and configurable NLP library for text processing, tokenization, and analysis",
+  "name": "dd-miniparse",
+  "version": "0.1.6",
+  "description": "Miniparse is a work-in-progress sophisticated and extensible NLP library for comprehensive text processing, tokenization, and analysis.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -23,7 +23,7 @@
     "text-analysis",
     "typescript"
   ],
-  "author": "Miniparse Contributors",
+  "author": "Damilare Osibanjo",
   "license": "MIT",
   "type": "commonjs",
   "bugs": {
@@ -32,15 +32,16 @@
   "homepage": "https://github.com/dev-dami/miniparse#readme",
   "dependencies": {
     "@google/generative-ai": "^0.17.0",
+    "@types/express": "^5.0.5",
     "@types/node": "^24.10.0",
+    "express": "^5.1.0",
     "js-yaml": "^4.1.0",
     "typescript": "^5.9.3"
   },
   "files": [
     "dist/**/*",
     "README.MD",
-    "API.md",
-    "examples.md",
+    "docs",
     "default.yaml",
     "LICENSE"
   ],
